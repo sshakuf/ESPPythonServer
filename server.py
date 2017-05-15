@@ -1,14 +1,35 @@
 import sys
+import os
 import socket
+import RestEngine
+#import RestAPI
+#import Rest_PinsAPI
+
+
+
 
 request_method = ""
 path = ""
 request_version = ""
 
 
-def echo():
-    print('in TEST')
-    return 'Test'
+def LoadRestApiModules():
+    for f in os.listdir('.'):
+        print f
+        if f.lower().startswith('rest') and f.lower().endswith('.py'):
+            module =__import__(f.strip('.py'))
+            InitializeRestAPI(module)
+            
+    
+
+def InitializeRestAPI(inModule):
+    #find all functions that starts with REST in this module
+    x = dir(inModule)
+    for func in dir(inModule):
+        if func.startswith('R_'):
+            RestEngine.AddRestEndPoint(func[2:], getattr(inModule, func))
+            
+LoadRestApiModules()
 
 def parse_request(text):
         if text != '':
@@ -28,55 +49,67 @@ def parse_request(text):
             if request_method == "GET":
                 if "?" in path:
                     filename, values = path.strip('/').split('?')
-                    if values[0] == 'led=on':
-                        # p0.low()
-                        pass
-                    else:
-                        # p0.high()
-                        pass
-                    eval(filename+'()')
+                    # if values[0] == 'led=on':
+                    #     # p0.low()
+                    #     pass
+                    # else:
+                    #     # p0.high()
+                    #     pass
+                    header, content =  eval(filename+'()')
+                    return header, content
+
                 else:
                     filename = path.strip('/')
                 if filename == '':
                     filename = 'index.html'
                 print("Filename:", filename)
-                fileext = filename.split('.')[1]
-                if fileext == 'html' or \
-                       fileext == 'css' or \
-                       fileext == 'js':
-                    content = ''
-                    try:
-                        f = open(filename, 'r')
+                ext = filename.split('.')
+                if (len(ext) > 1):
+                    #file related ahndeling
+                    fileext = filename.split('.')[1]
+                    if fileext == 'html' or \
+                           fileext == 'css' or \
+                           fileext == 'js':
+                        content = ''
+                        try:
+                            f = open(filename, 'r')
+                            content = f.read()
+                            f.close()
+                        except:
+                            print("File not exists. using index.html")
+                        header = RestEngine.createHeader(content, 'text', fileext)
+                        return header, content
+                    if fileext == 'png' or \
+                            fileext == 'jpg' or \
+                            fileext == 'gif' or \
+                            fileext == 'png' or \
+                            fileext == 'ico':
+                        f = open(filename, 'rb')
                         content = f.read()
                         f.close()
-                    except:
-                        print("File not exists. using index.html")
-                    header = createHeader(content, 'text', fileext)
+                        header = RestEngine.createHeader(content, 'image', fileext)
+                        return header, content
+                else:
+                    #command related handeling
+                    print ("recived Command " + filename)
+                    if path[0] == '/':
+                        path = path[1:]
+                    filename = path.split('/')
+                    if (isinstance(filename, str) == False and len(filename) > 1):
+                        command = filename[0]
+                        args = filename[1:]
+                    else:
+                        args = ''
+                        command  = filename
+
+                    if (RestEngine.Gethandler(command) != None):
+                            header, content = RestEngine.Gethandler(command)(args)
+
+                    #header, content =  eval(command+'(args)')
                     return header, content
-                if fileext == 'png' or \
-                        fileext == 'jpg' or \
-                        fileext == 'gif' or \
-                        fileext == 'png' or \
-                        fileext == 'ico':
-                    f = open(filename, 'rb')
-                    content = f.read()
-                    f.close()
-                    header = createHeader(content, 'image', fileext)
-                    return header, content
 
 
-def createHeader(content):
-    createHeader(content, 'text/html', '')
 
-
-def createHeader(content,contectType, fileext):
-    header = ''
-    header += 'HTTP/1.1 200 OK\r\n'
-    # header += 'Date: ' + time.localtime(time.time())
-    header += 'Content-Type: ' + contectType +'/' + fileext + '\r\n'
-    header += 'Content-Length: ' + str(len(content)) + '\r\n'
-    header += '\r\n'
-    return header
 
 def run(use_stream=False):
     s = socket.socket()
@@ -120,4 +153,4 @@ def run(use_stream=False):
 
 
 #uncomment to run at import
-#run()
+run()

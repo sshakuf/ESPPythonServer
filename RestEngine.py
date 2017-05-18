@@ -1,11 +1,16 @@
 
 commands = {}
 
+
+def CreateHTML(inBody):
+    return '<html><header><title>ESP8266</title></header><body> ' + inBody + '</body></html>'
+
+
 def AddRestEndPoint(inCommand, inHandler):
     commands[inCommand] = inHandler
 
 def Gethandler(inCommand):
-    if commands.has_key(inCommand):
+    if inCommand in commands:
         return commands[inCommand]
     return None
 

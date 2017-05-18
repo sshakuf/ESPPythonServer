@@ -6,12 +6,13 @@ def CreateHTML(inBody):
     return '<html><header><title>ESP8266</title></header><body> ' + inBody + '</body></html>'
 
 
-def AddRestEndPoint(inCommand, inHandler):
-    commands[inCommand] = inHandler
+def AddRestEndPoint(inCommand, inHandler, inGet=None, inSet=None):
+    
+    commands[inCommand] = {'default':inHandler, 'get':inGet, 'set':inSet}
 
-def Gethandler(inCommand):
+def Gethandler(inCommand, action):
     if inCommand in commands:
-        return commands[inCommand]
+        return commands[inCommand][action]
     return None
 
 

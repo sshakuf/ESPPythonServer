@@ -6,11 +6,6 @@ pinsNumsInput = [12,13,14,15,16]
 pins = {} 
 
 
-def intTryParse(value):
-    try:
-        return int(value), True
-    except ValueError:
-        return value, False
 
 
 def Initialize():
@@ -34,34 +29,28 @@ def htmlPinsState():
     return c
 
 
-
 def Get_pins(inProp):
-    return " pin " + str(inProp) + ": "+  str(pins[inProp].value())+ "  "
+    c =  " pin " + str(inProp) + ": "+  str(pins[inProp].value())+ "  "
+    content = RestEngine.CreateHTML(c)
+    header = RestEngine.createHeader(content)
+    return header, content
+
 
 def Set_pins(inProp, inVal):
     if inVal != 0:
         pins[inProp].value(1)
     else:
         pins[inProp].value(0)
-    return  " pin " + str(inProp) + ": "+  str(pins[inProp].value())+ "  "
+    c =  " pin " + str(inProp) + ": "+  str(pins[inProp].value())+ "  "
+    content = RestEngine.CreateHTML(c)
+    header = RestEngine.createHeader(content)
+    return header, content
+
 
 def R_pins(args):
     print('in R_pins')
     print (args)
     c = htmlPinsState()
-    if len(args) == 1:
-        #check that we have a valid pin number
-        pinnum, success = intTryParse(args[0])
-        if success:
-            #return onth the state of this pecific pin
-            c = Get_pins(pinnum)
-    if len(args) == 2:
-        pinnum, success = intTryParse(args[0])
-        if success:
-            pinval, success = intTryParse(args[1])
-            if success:
-                c = Set_pins(pinnum, pinval) 
-                
     
     
     content = RestEngine.CreateHTML(c)

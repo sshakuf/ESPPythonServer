@@ -7,6 +7,12 @@ request_method = ""
 path = ""
 request_version = ""
 
+def intTryParse(value):
+    try:
+        return int(value), True
+    except ValueError:
+        return value, False
+
 
 def LoadRestApiModules():
     for file in os.listdir('.'):
@@ -25,8 +31,17 @@ def InitializeRestAPI(inModule):
     x = dir(inModule)
     for func in dir(inModule):
         if func.startswith('R_'):
-            RestEngine.AddRestEndPoint(func[2:], getattr(inModule, func))
-            print ('Endpoint: ' + func[2:])
+            command = func[2:]
+            defaultptr = getattr(inModule, func)
+            getptr= None
+            setptr = None
+            functions = dir(inModule)
+            if "Get_"+command in functions:
+                getptr = getattr(inModule, "Get_"+func[2:])
+            if "Set_"+command in functions:
+                setptr = getattr(inModule, "Set_"+func[2:])
+            RestEngine.AddRestEndPoint(command, defaultptr, getptr, setptr)
+            print ('Endpoint: ' + command)
             
 LoadRestApiModules()
 
@@ -102,8 +117,27 @@ def parse_request(text):
                     args = []
                     command  = filename
 
-                if (RestEngine.Gethandler(command) != None):
-                        header, content = RestEngine.Gethandler(command)(args)
+
+                if len(args) == 1:
+                    #check that we have a valid pin number
+                    pinnum, success = intTryParse(args[0])
+                    if success:
+                        #return onth the state of this pecific pin
+                        func = RestEngine.Gethandler(command, 'get')
+                        if (func != None):
+                                header, content = func(pinnum)
+                elif len(args) == 2:
+                    pinnum, success = intTryParse(args[0])
+                    if success:
+                        pinval, success = intTryParse(args[1])
+                        if success:
+                            func = RestEngine.Gethandler(command, 'set')
+                            if (func != None):
+                                    header, content = func(pinnum, pinval)
+                else:  #Default answer
+                    func = RestEngine.Gethandler(command, 'default')
+                    if (func != None):
+                            header, content = func(args)
 
                 #header, content =  eval(command+'(args)')
                 return header, content
@@ -120,6 +154,8 @@ def removeEmptyItemAtEnd(inList):
     lastIndex = len(inList)-1 
     if inList[lastIndex] == '' and lastIndex > 0:
         return inList[:lastIndex]
+    if lastIndex == 0:
+        return []
     return inList
         
 
